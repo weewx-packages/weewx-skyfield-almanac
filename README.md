@@ -41,16 +41,24 @@ above for the maintained archive. Install Skyfield, NumPy and Requests in the
 Python environment running WeeWX. Pandas is optional for loading the Hipparcos
 star catalog, and is needed when you want those stars on a sky map.
 
-For a WeeWX virtual environment:
+Activate the virtual environment that runs WeeWX before using `python` or
+`weectl`, then install the runtime packages:
 
 ```sh
-python -m pip install 'skyfield>=1.49' numpy requests
-python -m pip install pandas
+python -m pip install --only-binary=:all: 'skyfield>=1.49' 'numpy' 'requests'
 ```
 
-For a system installation, use equivalent distribution packages where available.
-Skyfield 1.49 or later is needed for the non-TLE satellite support. Use your
-WeeWX environment directly; do not assume a fixed virtual-environment path.
+For Hipparcos stars, also install the optional package:
+
+```sh
+python -m pip install --only-binary=:all: 'pandas'
+```
+
+These commands use wheels and require no native build tools. They require
+wheels for your Python version and platform. For a system installation, use
+equivalent distribution packages in WeeWX's Python environment where available.
+Skyfield 1.49 or later is needed for the non-TLE satellite support. The extension
+installer does not install these Python packages.
 
 The service needs Internet access for its configured JPL kernels and optional
 IERS, Hipparcos and satellite data, plus a writable `skyfield` directory below
@@ -58,16 +66,15 @@ the configured SQLite data root. Large ephemeris files can delay initialization.
 
 ## Installation instructions
 
-Use `weectl` from the Python environment running WeeWX. With stock WeeWX 5,
-install the published archive:
+Replace `/path/to/weewx.conf` with your existing station configuration. Use
+`weectl` from the Python environment running WeeWX to install the archive:
 
 ```sh
 weectl extension install https://github.com/weewx-packages/catalog/releases/download/skyfield-almanac/v0.7.post1/skyfield-almanac-0.7.post1.tar.gz --config /path/to/weewx.conf
 ```
 
-Replace `/path/to/weewx.conf` with your station configuration. You can also
-download that URL and pass the local archive to the same command. Use elevated
-permissions only when your station files require them.
+You can also download that URL and pass the local archive to the same command.
+Use elevated permissions only when your station files require them.
 
 The installer registers `user.skyfieldalmanac.SkyfieldService` as a prep service
 and `user.skyfieldalmanac.LiveService` as a data service. It also adds missing
