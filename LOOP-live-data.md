@@ -6,7 +6,7 @@ data to the LOOP packets.
 ## Contents
 
 * [What is that service for?](#what-is-that-service-for)
-* [Configuration instructions](#configration-instructions)
+* [Configuration instructions](#configuration-instructions)
 * [Observation types](#observation-types)
 * [Add observation types to the WeeWX database](#add-observation-types-to-the-weewx-database)
 * [Units](#units)

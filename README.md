@@ -1,5 +1,14 @@
-# weewx-skyfield-almanac
-Almanac extension to WeeWX using Skyfield module
+# Skyfield almanac for WeeWX
+
+Calculate solar, lunar, planetary and optional satellite/star almanac values
+for WeeWX templates using Skyfield and downloaded astronomical data.
+
+This repository mirrors [the upstream source](https://github.com/roe-dl/weewx-skyfield-almanac). The maintained
+catalog archive is **0.7.post1**, carrying the complete GPL license text. Install that fixed archive below;
+the mirrored default branch can differ from its repaired payload.
+
+The catalog archive targets WeeWX `>=5.5.2,<6` and Python `>=3.10,<3.15`.
+
 
 ## Contents
 
@@ -20,91 +29,71 @@ Almanac extension to WeeWX using Skyfield module
 
 ## Why should I use this extension?
 
-PyEphem is deprecated. Its astronomical database is outdated and won't get
-updated any more. It ends in 2018. Dates after that year are calculated
-by extrapolation.
-
-Skyfield is the successor of PyEphem. It is from the same author, Brandon
-Rhodes. It uses more modern and more precise formulae and actual ephemerides
-provided by NASA's JPL.
-
-There is no other requirement than installing this extension to replace
-PyEphem calculated values by Skyfield calculated values in existing skins.
+Skyfield supplies an alternative almanac provider for existing WeeWX skins.
+The extension uses JPL ephemeris files and adds attributes described in the
+[customization guide](Customization.md). Existing `$almanac` tags use this
+provider once initialization finishes; PyEphem remains a fallback when enabled.
 
 ## Prerequisites
 
-WeeWX from version 5.3 on ist required (use version 0.5 for WeeWX 5.2) and 
-Skyfield from version 1.47 on is recommended. If you want to process
-Earth satellite files not in TLE format, you need at least Skyfield 1.49.
+The source requires WeeWX 5.3 or later. Use the catalog compatibility range
+above for the maintained archive. Install Skyfield, NumPy and Requests in the
+Python environment running WeeWX. Pandas is optional for loading the Hipparcos
+star catalog, and is needed when you want those stars on a sky map.
 
-Install Skyfield and NumPy. If you want to load star data you additionally
-need the Pandas module, otherwise you can leave it out.
+For a WeeWX virtual environment:
 
-If you used the packet installation of WeeWX
-this is for Debian-like distributions:
-
-```shell
-sudo apt-get install python3-numpy
-sudo apt-get install python3-pandas
-sudo apt-get install python3-skyfield
+```sh
+python -m pip install 'skyfield>=1.49' numpy requests
+python -m pip install pandas
 ```
 
-For pip-based installations this is:
+For a system installation, use equivalent distribution packages where available.
+Skyfield 1.49 or later is needed for the non-TLE satellite support. Use your
+WeeWX environment directly; do not assume a fixed virtual-environment path.
 
-```shell
-source ~/weewx-venv/bin/activate
-pip install numpy
-pip install pandas
-pip install skyfield
-pip install requests
-```
+The service needs Internet access for its configured JPL kernels and optional
+IERS, Hipparcos and satellite data, plus a writable `skyfield` directory below
+the configured SQLite data root. Large ephemeris files can delay initialization.
 
 ## Installation instructions
 
-1) download
+Use `weectl` from the Python environment running WeeWX. With stock WeeWX 5,
+install the published archive:
 
-   ```shell
-   wget -O weewx-skyfield-almanac.zip https://github.com/roe-dl/weewx-skyfield-almanac/archive/master.zip
-   ```
+```sh
+weectl extension install https://github.com/weewx-packages/catalog/releases/download/skyfield-almanac/v0.7.post1/skyfield-almanac-0.7.post1.tar.gz --config /path/to/weewx.conf
+```
 
-2) run the installer
+Replace `/path/to/weewx.conf` with your station configuration. You can also
+download that URL and pass the local archive to the same command. Use elevated
+permissions only when your station files require them.
 
-   WeeWX from version 5.2 on and WeeWX packet installation
+The installer registers `user.skyfieldalmanac.SkyfieldService` as a prep service
+and `user.skyfieldalmanac.LiveService` as a data service. It also adds missing
+localization keys to existing skins' language files; see [language files](lang/README.md).
+To skip that step, append `--skip-localization` to the installation command.
+To preload the configured ephemeris and timescale files, append
+`--download-ephemeris`. These are custom arguments handled by this installer.
 
-   ```shell
-   sudo weectl extension install weewx-skyfield-almanac.zip
-   ```
+Restart WeeWX yourself. Check its log for ephemeris initialization and let a
+report cycle finish. A small explicit configuration is:
 
-   WeeWX from version 5.2 on and WeeWX pip installation into an virtual environment
+```ini
+[Almanac]
+    [[Skyfield]]
+        enable = true
+        ephemeris = de440s.bsp
+        use_builtin_timescale = true
+```
 
-   ```shell
-   source ~/weewx-venv/bin/activate
-   weectl extension install weewx-skyfield-almanac.zip
-   ```
-   
-> [!CAUTION]
-> You must not use `sudo` if you installed WeeWX by `pip`.
+The installer sets `de440.bsp`; this smaller example selects `de440s.bsp`.
+Other configured planetary constants and optional catalogs can still require
+downloads. For an offline station, populate the required files before removing
+network access. `--download-ephemeris` does not preload every optional catalog.
 
-   In case your WeeWX installation will not have permanent Internet access
-   you can append `--download-ephemeris` to the command line to download
-   ephemerides during installation of the extension. This is possible from
-   WeeWX 5.3 on. Please be patient when downloading ephemerides.
-
-3) restart weewx
-
-   for SysVinit systems:
-
-   ```shell
-   sudo /etc/init.d/weewx stop
-   sudo /etc/init.d/weewx start
-   ```
-
-   for systemd systems:
-
-   ```shell
-   sudo systemctl stop weewx
-   sudo systemctl start weewx
-   ```
+In a Cheetah template, existing tags such as `$almanac.sun.rise` use Skyfield
+after initialization. The examples and reference below cover additional tags.
 
 ## Configuration instructions
 
@@ -125,7 +114,7 @@ intervals to be completed at first run after installation, depending on
 configuration.
 
 Look at 
-[weewx-skymap-extension examples](https://github.com/roe-dl/weewx-skymap-almanac/tree/master/examples/Seasons)
+[weewx-skymap examples](https://github.com/weewx-packages/weewx-skymap-almanac/tree/master/examples/Seasons)
 for a replacement almanac page for the
 WeeWX built-in Seasons skin to show additional values provided by this
 extension.
@@ -143,7 +132,7 @@ If you encounter speed issues, here are some hints:
   [weewx-GTS extension](https://github.com/roe-dl/weewx-GTS)
   you need at least version 1.2 of it together with this extension.
 * Calculating periods of visibility can slow down report creation.
-  See section [`genVisibleTimespans()`](#genVisibleTimespans) 
+  See section [`genVisibleTimespans()`](Customization.md#genvisibletimespans)
   for details and solutions.
 * For some attributes `almanac_time` can take a list of timestamps.
   Then, a list of respective results is returned. Using this can speed
@@ -177,7 +166,7 @@ but present live data out of LOOP packets. This extension can add fast
 changing almanac values to the LOOP packet for live updates. To use them
 include them in MQTT output. To activate live data, set the
 `enable_live_data` configuration option to `true`, which is the default.
-For details see [LOOP live data](.//LOOP-live-data.md) guide.
+For details see [LOOP live data](LOOP-live-data.md) guide.
 
 ## For developers
 
@@ -217,7 +206,7 @@ A: Depending on the ephemeris file you chose initialization takes more or
 Q: Which ephemeris file should I use?
 
 A: The ephemeris files differ in size and coverage of heavenly bodies and
-   time. The default, if you do not choose anything, is `de440s.bsp`. It
+   time. The runtime fallback is `de440s.bsp`, while the installer sets `de440.bsp`. It
    covers Sun, Earth, Moon, and some data of the long known planets. If
    you need more, try `de440.bsp` or even `de441.bsp`.
    From time to time the NASA releases new sets of ephemeris files. Then you
@@ -254,11 +243,8 @@ A: Try "mars_barycenter" instead of "mars".
 Q: What can I do if I don't want the skins' language files augmented with
    astronomic terms from this extension?
 
-A: Unfortunately there is no direct way to do so, but there is a workaround. 
-   You can unpack the downloaded ZIP file, which will create a directory
-   `weewx-skyfield-almanac-master`. Within that directory you can remove 
-   the `lang` directory, and then install the extension from 
-   the `weewx-skyfield-almanac-master` directory.
+A: Append `--skip-localization` to the fixed-archive installation command.
+   The installer recognizes this custom argument and skips language-file changes.
 
 ## Credits
 
@@ -284,3 +270,10 @@ A: Unfortunately there is no direct way to do so, but there is a workaround.
 * [Andrea K. Myers-Beaghton et al.: The moon tilt illusion](https://www.seas.upenn.edu/~amyers/MoonPaperOnline.pdf)
 * [Karlheinz Schott (&dagger;): "Falsche" Mondneigung - Wohin zeigt die Mondsichel?](https://falsche-mondneigung.jimdofree.com/b-geometrische-darstellung-und-berechnung/) (german)
 * [Lunar standstill (Wikipedia)](https://en.wikipedia.org/wiki/Lunar_standstill)
+
+## License and origin
+
+Copyright 2025-2026 Johanna Karen Roedenbeck and credited contributors.
+[GNU GPLv3 or later](LICENSE). The mirrored upstream source and its references
+remain available; the catalog `.post1` archive includes the complete license.
+Astronomical data coverage depends on the kernels and catalogs you configure.

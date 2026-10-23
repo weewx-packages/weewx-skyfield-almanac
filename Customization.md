@@ -11,7 +11,7 @@ extensions in skins.
   * [Date and time](#date-and-time)
   * [Calendar events](#calendar-events)
   * [Heavenly bodies](#heavenly-bodies)
-  * [`genVisibleTimespans()`](#genVisibleTimespans)
+  * [`genVisibleTimespans()`](#genvisibletimespans)
   * [Earth satellites](#earth-satellites)
   * [Maps](#maps)
   * [Coordinate systems](#coordinate-systems)
@@ -430,7 +430,7 @@ display a table of the planets and their data you could do it that way:
 ```
 
 If you want to have the names of the planets in your local language, put
-them in the language file of your skin in section `[[Almanac]]` 
+them in the language file of your skin in section `[Almanac]`
 as a list of names to the key `planet_names`.
 
 ### `genVisibleTimespans()`
@@ -488,7 +488,7 @@ satellite you would write
 
 ```
 Latitude: $almanac.weather_38552.sublatitude.format("%.3f")
-Longitude: $almananc.weather_38552.sublongitude.format("%.3f")
+Longitude: $almanac.weather_38552.sublongitude.format("%.3f")
 ```
 
 Please note that this one is a geostationary satellite. So the position
@@ -502,6 +502,7 @@ positions:
 
 ```
     #import user.skyfieldalmanac
+    #from weewx.units import ValueTuple, ValueHelper
     <table>
     <tr>
     <th>Station</th>
@@ -732,8 +733,8 @@ If you simply want to know whether a certain extended attribute is
 available, you can do so by using `$varExists` like in this example:
 
 ```
-#if $varExists("almanac.sun.max_altitude")
-... $almanac.sun.max_altitude.format("%.1f") ...
+#if $varExists("almanac.sun.day_max_altitude")
+... $almanac.sun.day_max_altitude.format("%.1f") ...
 #end if
 ```
 
@@ -747,8 +748,9 @@ and/or scientific findings. Therefore Skyfield allows for downloading new
 versions of those data. Once downloaded the files are re-used every
 time WeeWX starts.
 
-The files are located in `SQLITE_ROOT`, which is defined in `weewx.conf` in
-section `[DatabaseTypes]`, sub-section `[[SQLite]]`.
+The files are located in the `skyfield` subdirectory of `SQLITE_ROOT`, which is
+defined in `weewx.conf` in section `[DatabaseTypes]`, sub-section `[[SQLite]]`.
+Relative `SQLITE_ROOT` paths are resolved against `WEEWX_ROOT`.
 
 ### Time scales
 
